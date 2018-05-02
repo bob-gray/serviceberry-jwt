@@ -1,0 +1,49 @@
+{
+  "name": "serviceberry-jwt",
+  "version": "0.1.0",
+  "description": "JSON Web Token authentication for Serviceberry",
+  "main": "plugin.js",
+  "scripts": {
+    "build": "npm run lint && npm run test-coverage",
+    "lint": "eslint plugin.js",
+    "lint:spec": "eslint spec/**",
+    "test": "jasmine",
+    "test-coverage": "nyc --include=plugin.js --reporter=lcov --reporter=text npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bob-gray/serviceberry-jwt.git"
+  },
+  "keywords": [
+    "jwt",
+    "authentication",
+    "authorization",
+    "serviceberry",
+    "json",
+    "web",
+    "token",
+    "http",
+    "rest",
+    "api"
+  ],
+  "author": "Bob Gray <gray.bob98@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bob-gray/serviceberry-jwt/issues"
+  },
+  "homepage": "https://github.com/bob-gray/serviceberry-jwt#readme",
+  "peerDependencies": {
+    "serviceberry": "^0.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "jasmine": "^3.1.0",
+    "jasmine-spec-reporter": "^4.2.1",
+    "node-mocks-http": "^1.6.7",
+    "nyc": "^11.6.0",
+    "serviceberry": "^0.3.0"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^8.2.1"
+  }
+}
