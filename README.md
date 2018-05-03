@@ -35,22 +35,22 @@ class Auth extends Jwt {
 	}
 
 	async validate (request) { // you can override validate to go beyond just verifying the token signature
-		super.validate(...arguments); // will throw if token is not verified
+		await super.validate(...arguments); // will throw if token is not verified
 		... // test scopes or other custom payload properties
 	}
 }
 
-trunk.use(new Auth());
+trunk.use(new Auth(verify, options));
 ```
 
-Options
--------
+Verify
+------
 
 See [jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken#user-content-jwtverifytoken-secretorpublickey-options-callback)
 for verify options.
 
-Properties
-----------
+Options
+-------
 
   - **scheme** *string*
 
@@ -65,7 +65,7 @@ Properties
       - *Token*
 
 	    When the scheme is *Token* the plugin will look for the token in the request's
-		parameters by it's name (see *param* below). `request.getParam(plugin.param)`.
+		parameters by it's name (see *param* below). `request.getParam(options.param)`.
 
   - **param** *string*
 
@@ -77,16 +77,16 @@ Jwt
 ---
 Abstract class
 
-### constructor([options[, properties]])
+### constructor([verify[, options]])
 
-  - **options** *object*
+  - **verify** *object*
 
-	Sets `this.options`. Passed to `jwt.verify()`. See
+	Sets `this.verify`. Passed to `jwt.verify()`. See
 	[jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken#user-content-jwtverifytoken-secretorpublickey-options-callback)
 
-  - **properties**
+  - **options**
 
-    Set as properties of instance. See [properties](#properties) above.
+    Sets `this.options`. See [options](#options) above.
 
 ### getKey(id)
 

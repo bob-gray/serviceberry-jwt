@@ -7,12 +7,12 @@ const jwt = require("jsonwebtoken"),
 	bearer = /^Bearer /;
 
 class Jwt {
-	constructor (options = {}, properties = {scheme: "Bearer"}) {
+	constructor (verifyOptions = {}, options = {scheme: "Bearer"}) {
+		this.verify = {...verifyOptions};
 		this.options = {...options};
-		Object.assign(this, properties);
 
-		if (this.scheme === "Token" && !this.param) {
-			this.param = "token";
+		if (this.options.scheme === "Token" && !this.options.param) {
+			this.options.param = "token";
 		}
 	}
 
@@ -36,7 +36,7 @@ class Jwt {
 		const key = await this.getKey(request.jwt.header.kid);
 
 		try {
-			await verify(request.jwt.raw, key, this.options);
+			await verify(request.jwt.raw, key, this.verify);
 		} catch (error) {
 			throw this.unauthorized(error.message);
 		}
@@ -45,11 +45,11 @@ class Jwt {
 	getToken (request) {
 		var token;
 
-		if (this.scheme === "Bearer") {
+		if (this.options.scheme === "Bearer") {
 			token = request.getHeader("Authorization") || "";
 			token = token.replace(bearer, "");
-		} else if (this.scheme === "Token") {
-			token = request.getParam(this.param);
+		} else if (this.options.scheme === "Token") {
+			token = request.getParam(this.options.param);
 		}
 
 		return token;
@@ -63,7 +63,7 @@ class Jwt {
 
 	unauthorized (request, message) {
 		return new HttpError(message, "Unauthorized", {
-			"WWW-Authenticate": this.scheme
+			"WWW-Authenticate": this.options.scheme
 		});
 	}
 }
