@@ -1,6 +1,6 @@
 {
   "name": "serviceberry-jwt",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "JSON Web Token authentication for Serviceberry",
   "main": "plugin.js",
   "scripts": {
