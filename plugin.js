@@ -61,7 +61,7 @@ class Jwt {
 			"this class and at least implement the getKey(id) method.");
 	}
 
-	unauthorized (request, message) {
+	unauthorized (message) {
 		return new HttpError(message, "Unauthorized", {
 			"WWW-Authenticate": this.options.scheme
 		});
