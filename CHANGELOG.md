@@ -1,3 +1,7 @@
+0.2.1
+-----
+*No changes*
+
 0.2.0
 -----
   - Stopped setting `request.token` to `request.jwt.payload`
