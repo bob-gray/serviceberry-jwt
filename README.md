@@ -19,12 +19,13 @@ npm install serviceberry-jwt
 Usage
 -----
 
-This plugin exports an abstract class `Jwt` for extending by your
-authorization class that knows how to fetch your token keys. To use this
-plugin extend `Jwt` and implement at least `getKey(id)`. The key is then used
-to verify the request's token. You can extend the validation by overriding
-`validate(request)` or change the process of finding a request's token by
-overriding `getToken(request)`.
+Fails the request with a `401 Unauthorized` status if the token is not found, is not formatted correctly, or
+if the key doesn't verify the signature.
+
+This plugin exports an abstract class `Jwt` for extending by your authorization class that knows how to fetch your
+token keys. To use this plugin extend `Jwt` and implement at least `getKey(id)`. The key is then used to verify
+the request's token. You can extend the validation by overriding `validate(request)` or change the process of finding
+a request's token by overriding `getToken(request)`.
 
 ```js
 const Jwt = require("serviceberry-jwt");
@@ -40,17 +41,17 @@ class Auth extends Jwt {
 	}
 }
 
-trunk.use(new Auth(verify, options));
+trunk.use(new Auth(verifyOptions, options));
 ```
 
-Verify
-------
+verifyOptions *object*
+----------------------
 
 See [jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken#user-content-jwtverifytoken-secretorpublickey-options-callback)
 for verify options.
 
-Options
--------
+options *object*
+----------------
 
   - **scheme** *string*
 
@@ -67,21 +68,33 @@ Options
 	    When the scheme is *Token* the plugin will look for the token in the request's
 		parameters by it's name (see *param* below). `request.getParam(options.param)`.
 
+  - **accessToken** *boolean*
+
+    When *scheme* is `Bearer` and `accessToken` is `true`, first look for the token in the `Authorization` header
+    and if it isn't found look for `access_token` as described below. Defaults to `false`. This option has no
+    purpose if *scheme* is `Token`. Per [RFC 6750](https://tools.ietf.org/html/rfc6750) sections 2.2 & 2.3.
+    
+      - Find bearer token in a form encoded body parameter named `access_token` for request methods with defined
+        body semantics (*POST, PUT, and PATCH*).
+
+      - Find bearer token in a query string parameter named `access_token` for request methods without defined
+        body semantics (*not POST, PUT, or PATCH*).
+
   - **param** *string*
 
-    The name of the request parameter where the token should be found. Defaults
-	to `token`. This can be any type of request parameter - path, query string,
-	or body. This property has no purpose if scheme is *Bearer*.
+    When *scheme* is `Token`, *param* is the name of the request parameter where the token should be found.
+    Defaults to `token`. This can be any type of request parameter - path, query string, or body. This option
+    has no purpose if scheme is `Bearer`.
 
 Jwt
 ---
 Abstract class
 
-### constructor([verify[, options]])
+### constructor([verifyOptions[, options]])
 
-  - **verify** *object*
+  - **verifyOptions** *object*
 
-	Sets `this.verify`. Passed to `jwt.verify()`. See
+	Sets `this.verifyOptions`. Passed to `jwt.verify()`. See
 	[jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken#user-content-jwtverifytoken-secretorpublickey-options-callback)
 
   - **options**
@@ -100,25 +113,25 @@ Called by the `validate` method for fetching a signing key used to verify a toke
 
 ### use(request, response)
 
-The handler method. This is the method called by Serviceberry. Sets `request.jwt`
-and `request.token`. This is an `async` function.
+The [handler](https://serviceberry.js.org/docs/handlers) method. This is the method called by Serviceberry.
+Sets `request.jwt`. This is an `async` function.
 
   - **request** *object*
 
-    Serviceberry [`request`](https://serviceberry.js.org/docs/request.html) object.
+    Serviceberry [`request`](https://serviceberry.js.org/docs/request) object.
 
   - **response** *object*
 
-    Serviceberry [`response`](https://serviceberry.js.org/docs/response.html) object.
+    Serviceberry [`response`](https://serviceberry.js.org/docs/response) object.
 
 ### validate(request)
 
-Called by the `use` method to validate the token. This is an `async`
-function and should return or resolve to a boolean value or throw an error.
+Called by the `use` method to validate the token. This is an `async` function and should return
+or resolve to a boolean value or throw an error.
 
   - **request** *object*
 
-    Serviceberry [`request`](https://serviceberry.js.org/docs/request.html) object.
+    Serviceberry [`request`](https://serviceberry.js.org/docs/request) object.
 
 ### getToken(request)
 
@@ -126,4 +139,4 @@ Called by the `use` method to find the request's token.
 
   - **request** *object*
 
-    Serviceberry [`request`](https://serviceberry.js.org/docs/request.html) object.
+    Serviceberry [`request`](https://serviceberry.js.org/docs/request) object.

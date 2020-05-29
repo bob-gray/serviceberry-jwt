@@ -1,19 +1,22 @@
+/* eslint-env jasmine */
+
 "use strict";
 
-const Jwt = require("../plugin"),
-	Request = require("serviceberry/src/Request"),
-	{HttpError} = require("serviceberry"),
-	httpMocks = require("node-mocks-http");
+const Jwt = require("../plugin");
 
 describe("serviceberry-jwt", () => {
 	var handler,
 		request,
-		token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.XbPfbIHMI6arZ3Y922BhjWgQzWXcXNrz0ogtVhfEd2o";
+		token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+			"eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
+			"XbPfbIHMI6arZ3Y922BhjWgQzWXcXNrz0ogtVhfEd2o",
+		errorHeaders = {
+			"WWW-Authenticate": "Bearer"
+		};
 
 	beforeEach(() => {
 		handler = new Jwt();
-		handler.getKey = jasmine.createSpy("Jwt.getKey")
-			.and.returnValue("secret");
+		handler.getKey = jasmine.createSpy("Jwt.getKey").and.returnValue("secret");
 		request = createRequest("Bearer " + token);
 	});
 
@@ -29,7 +32,7 @@ describe("serviceberry-jwt", () => {
 		await handler.use(request);
 
 		expect(request.jwt).toEqual({
-			raw: request.getHeader("Authorization").replace("Bearer ", ""),
+			string: request.getHeader("Authorization").replace("Bearer ", ""),
 			header: {
 				alg: "HS256",
 				typ: "JWT"
@@ -43,25 +46,16 @@ describe("serviceberry-jwt", () => {
 		});
 	});
 
-	it("should set request.token", async () => {
-		await handler.use(request);
-
-		expect(request.token).toEqual({
-			sub: "1234567890",
-			name: "John Doe",
-			iat: 1516239022
-		});
-	});
-
 	it("should not authenticate without credentials", async () => {
 		request = createRequest();
 
 		try {
 			await handler.use(request);
-			fail();
-		} catch (error) {
-			expect().nothing();
+		} catch {
+			// request fail will throw an error
 		}
+
+		expect(request.fail).toHaveBeenCalledWith("Please provide token.", "Unauthorized", errorHeaders);
 	});
 
 	it("should not authenticate with the wrong key", async () => {
@@ -69,10 +63,11 @@ describe("serviceberry-jwt", () => {
 
 		try {
 			await handler.use(request);
-			fail();
-		} catch (error) {
-			expect().nothing();
+		} catch {
+			// request.fail will throw an error
 		}
+
+		expect(request.fail).toHaveBeenCalledWith("invalid signature", "Unauthorized", errorHeaders);
 	});
 
 	it("should not authenticate with a malformed token", async () => {
@@ -80,22 +75,62 @@ describe("serviceberry-jwt", () => {
 
 		try {
 			await handler.use(request);
-			fail();
-		} catch (error) {
-			expect().nothing();
+		} catch {
+			// request.fail will throw an error
 		}
+
+		expect(request.fail).toHaveBeenCalledWith("Token is malformed.", "Unauthorized", errorHeaders);
 	});
 
 	it("should get the token from the request's params if scheme is `Token`", () => {
-		request.getParam = jasmine.createSpy("request.getParam")
-			.and.returnValue(token);
+		request.getParam.and.returnValue(token);
 
 		handler = new Jwt({}, {
 			scheme: "Token"
 		});
 
-		;
 		expect(handler.getToken(request)).toBe(token);
+	});
+
+	it("should get the token from the request's query string when accessToken is true", () => {
+		request = createRequest();
+		request.getQueryParam.and.returnValue(token);
+
+		handler = new Jwt({}, {
+			scheme: "Bearer",
+			accessToken: true
+		});
+
+		expect(handler.getToken(request)).toBe(token);
+		expect(request.getQueryParam).toHaveBeenCalledWith("access_token");
+	});
+
+	it("should get the token from the request's query string when accessToken is true", () => {
+		request = createRequest();
+		request.getMethod.and.returnValue("POST");
+		request.getContentType.and.returnValue("application/x-www-form-urlencoded");
+		request.getBodyParam.and.returnValue(token);
+
+		handler = new Jwt({}, {
+			scheme: "Bearer",
+			accessToken: true
+		});
+
+		expect(handler.getToken(request)).toBe(token);
+		expect(request.getBodyParam).toHaveBeenCalledWith("access_token");
+	});
+
+	it("should get the token from the authorization header first when accessToken is true", () => {
+		request = createRequest(token);
+
+		handler = new Jwt({}, {
+			scheme: "Bearer",
+			accessToken: true
+		});
+
+		expect(handler.getToken(request)).toBe(token);
+		expect(request.getBodyParam).not.toHaveBeenCalled();
+		expect(request.getQueryParam).not.toHaveBeenCalled();
 	});
 
 	it("should not find a token when the scheme is unknown", () => {
@@ -103,7 +138,6 @@ describe("serviceberry-jwt", () => {
 			scheme: "Foo Baz"
 		});
 
-		;
 		expect(handler.getToken(request)).toBeUndefined();
 	});
 
@@ -120,16 +154,18 @@ describe("serviceberry-jwt", () => {
 });
 
 function createRequest (authorization) {
-	var incomingMessage = httpMocks.createRequest({
-			url: "/",
-			headers: {
-				Authorization: authorization
-			}
-		}),
-		request;
+	var request = jasmine.createSpyObj("request", [
+		"getHeader",
+		"getMethod",
+		"getContentType",
+		"getParam",
+		"getBodyParam",
+		"getQueryParam",
+		"fail"
+	]);
 
-	incomingMessage.setEncoding = Function.prototype;
-	request = new Request(incomingMessage);
+	request.getHeader.and.returnValue(authorization);
+	request.fail.and.throwError("request fail");
 
 	return request;
 }
