@@ -1,4 +1,5 @@
 /* eslint-env jasmine */
+/* eslint max-nested-callbacks: ["error", 3], no-return-assign: "warn" */
 
 "use strict";
 
@@ -44,6 +45,14 @@ describe("serviceberry-jwt", () => {
 			},
 			signature: "XbPfbIHMI6arZ3Y922BhjWgQzWXcXNrz0ogtVhfEd2o"
 		});
+	});
+
+	it("should deep freeze request.jwt", async () => {
+		await handler.use(request);
+
+		expect(() => request.jwt.header = "evil").toThrow();
+		expect(() => request.jwt.payload.sub = "evil").toThrow();
+		expect(() => request.jwt.signature = "evil").toThrow();
 	});
 
 	it("should not authenticate without credentials", async () => {

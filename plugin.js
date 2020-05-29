@@ -22,17 +22,17 @@ class Jwt {
 			this.unauthorized(request, "Please provide token.");
 		}
 
-		request.jwt = jwt.decode(token, {
+		request.jwt = Object.assign(Object.create(null), jwt.decode(token, {
 			complete: true
-		});
+		}));
 
-		if (!request.jwt) {
-			this.unauthorized(request, "Token is malformed.");
-		}
-
-		Object.freeze(Object.assign(request.jwt, {
+		deepFreeze(Object.assign(request.jwt, {
 			string: token
 		}));
+
+		if (!request.jwt.payload) {
+			this.unauthorized(request, "Token is malformed.");
+		}
 
 		return this.validate(request);
 	}
@@ -100,6 +100,13 @@ class Jwt {
 		request.fail(message, "Unauthorized", {
 			"WWW-Authenticate": this.options.scheme
 		});
+	}
+}
+
+function deepFreeze (value) {
+	if (value === Object(value)) {
+		Object.getOwnPropertyNames(Object.freeze(value))
+			.forEach(name => deepFreeze(value[name]));
 	}
 }
 
