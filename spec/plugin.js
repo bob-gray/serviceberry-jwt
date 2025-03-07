@@ -1,6 +1,3 @@
-/* eslint-env jasmine */
-/* eslint max-nested-callbacks: ["error", 3], no-return-assign: "warn" */
-
 "use strict";
 
 const Jwt = require("../plugin");
@@ -50,9 +47,17 @@ describe("serviceberry-jwt", () => {
 	it("should deep freeze request.jwt", async () => {
 		await handler.use(request);
 
-		expect(() => request.jwt.header = "evil").toThrow();
-		expect(() => request.jwt.payload.sub = "evil").toThrow();
-		expect(() => request.jwt.signature = "evil").toThrow();
+		expect(() => {
+			request.jwt.header = "evil";
+		}).toThrow();
+
+		expect(() => {
+			request.jwt.payload.sub = "evil";
+		}).toThrow();
+
+		expect(() => {
+			request.jwt.signature = "evil";
+		}).toThrow();
 	});
 
 	it("should not authenticate without credentials", async () => {
@@ -156,7 +161,7 @@ describe("serviceberry-jwt", () => {
 		try {
 			await handler.use(request);
 			fail();
-		} catch (error) {
+		} catch {
 			expect().nothing();
 		}
 	});
